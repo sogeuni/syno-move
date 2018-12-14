@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import yaml
-import logging
+import log
 
 class Config(dict):
   def __init__(self, *args, **kwargs):
     dict.__init__(self, *args, **kwargs)
-    self.logger = logging.getLogger('synomove')
+    self.logger = log.get_logger()
 
   def __getattr__(self, name):
     try:

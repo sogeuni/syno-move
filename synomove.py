@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import signal
 import sys
 import time
@@ -8,6 +7,7 @@ from threading import Thread, Timer
 import yaml
 from persistqueue import Queue
 
+import log
 from util import Config
 
 task_queue = Queue('move_task_queue')
@@ -31,25 +31,11 @@ def scan_finished_files():
   print('put: ' + str(n))
   task_queue.put(str(n))
   n += 1
-
+  
   Timer(0.3, scan_finished_files).start()
 
-def set_logger(logger):
-  # TODO: change to INFO
-  logger.setLevel(logging.DEBUG)
-  formatter = logging.Formatter('%(asctime)s::%(levelname)s - %(message)s')
-
-  stream_hander = logging.StreamHandler()
-  stream_hander.setFormatter(formatter)
-  logger.addHandler(stream_hander)
-
-  file_handler = logging.FileHandler('synomove.log')
-  file_handler.setFormatter(formatter)
-  logger.addHandler(file_handler)
-
 if __name__ == '__main__':
-  logger = logging.getLogger('synomove')
-  set_logger(logger)
+  logger = log.setup_custom_logger()
 
   logger.info('start SYNOMOVE')
 
