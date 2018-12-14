@@ -1,0 +1,7 @@
+host:
+  protocol: 'https'
+  domain: 'domain.com'
+  port: 5001
+auth:
+  account: 'userid'
+  passwd: 'passw0rd!'

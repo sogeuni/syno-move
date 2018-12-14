@@ -108,3 +108,6 @@ move_task_queue/
 
 # vscode
 .vscode/
+
+# config
+config.yaml
