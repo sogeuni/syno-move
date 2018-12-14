@@ -105,3 +105,6 @@ venv.bak/
 
 # persist-queue
 move_task_queue/
+
+# vscode
+.vscode/
