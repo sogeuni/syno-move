@@ -20,6 +20,7 @@ move_task_queue = persistqueue.Queue('move_task_queue')
 
 def move_file():
   while True:
+    logger.info('wait move_file')
     item = move_task_queue.get()
 
     if item:
@@ -40,11 +41,12 @@ def move_file():
       move_task_queue.task_done()
 
 def scan_torrent():
+  logger.info('scan_torrent')
   dstask_api = DownloadStationTask(conn, version=1)
   # Use the 'list' query method to see the running tasks
   resp = dstask_api.list(additional='detail,file')
 
-  # logger.debug(resp.payload)
+  logger.debug(resp.payload)
 
   if resp.is_success():
     items = resp.payload.get('data').get('tasks')
