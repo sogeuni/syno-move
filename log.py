@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 
 LOGGER_NAME='synomove'
-LOGGER_FILE_NAME='synomove.log'
+LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "synomove.log")
 
 def setup_custom_logger():
   formatter = logging.Formatter(fmt='%(asctime)s::%(levelname)s::%(module)s - %(message)s')
@@ -10,7 +11,7 @@ def setup_custom_logger():
   stream_handler = logging.StreamHandler()
   stream_handler.setFormatter(formatter)
 
-  file_handler = logging.FileHandler(LOGGER_FILE_NAME)
+  file_handler = logging.FileHandler(LOG_FILE)
   file_handler.setFormatter(formatter)
 
   logger = logging.getLogger(LOGGER_NAME)
