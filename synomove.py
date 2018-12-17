@@ -1,58 +1,89 @@
 # -*- coding: utf-8 -*-
+import os
 import signal
+import subprocess
 import sys
 import time
 from threading import Thread, Timer
+from urlparse import urlparse
 
+import persistqueue
 import yaml
-from persistqueue import Queue
 
 import log
+from synopy.api import DownloadStationTask
+from synopy.base import Connection
+from task import Task
 from util import Config
 
-task_queue = Queue('move_task_queue')
-n = 1
+move_task_queue = persistqueue.Queue('move_task_queue')
 
 def move_file():
   while True:
-    print('Consumer waiting')
+    item = move_task_queue.get()
 
-    logger.info('aaa')
+    if item:
+      task = Task(item)
+      cmd = 'rclone moveto "' + os.path.join(config.org_root, task.org) + '" "' + os.path.join(config.dest_root, task.dest) + '"'
+      logger.info(cmd)
+      
+      try:
+        result = subprocess.check_output(cmd, shell=True)
+        logger.info("cmd: " + result)
+      except subprocess.CalledProcessError as e:
+        logger.error(e)
+        move_task_queue.put(item)
+        # TODO: notification
 
-    t = task_queue.get()
+      move_task_queue.task_done()
 
-    if t:
-      print('Consumer working: ' + t)
-      time.sleep(1)
-      task_queue.task_done()
+def scan_torrent():
+  dstask_api = DownloadStationTask(conn, version=1)
+  # Use the 'list' query method to see the running tasks
+  resp = dstask_api.list(additional='detail,file')
 
-def scan_finished_files():
-  global n
-  print('put: ' + str(n))
-  task_queue.put(str(n))
-  n += 1
-  
-  Timer(0.3, scan_finished_files).start()
+  # logger.debug(resp.payload)
+
+  if resp.is_success():
+    items = resp.payload.get('data').get('tasks')
+
+    for item in items:
+      task = Task(item)
+
+      if task.is_complete():
+        logger.info('delete: ' + task.id)
+        result = dstask_api.delete(id=task.id)
+        logger.debug(result.payload)
+        if result.payload.get('success'):
+          logger.info('put in queue: ' + task.file_name)
+          move_task_queue.put(item)
+        
+  Timer(config.scan_interval, scan_torrent).start()
 
 if __name__ == '__main__':
   logger = log.setup_custom_logger()
-
   logger.info('start SYNOMOVE')
 
+  # TODO: config path 설정
   stream = open('config.yaml', 'r')
   config = Config(yaml.load(stream))
 
-  logger.debug("config.host -> " + str(config.host))
-  logger.debug("config.auth -> " + str(config.auth))
+  logger.info('Connect to ' + config.server)
+  url = urlparse(config.server)
+
+  # connect to DSM
+  conn = Connection(url.scheme, url.hostname, port=url.port)
+  conn.authenticate(config.account, config.passwd)
 
   move_thread = Thread(target=move_file)
   move_thread.daemon = True
   move_thread.start()
 
-  scan_thread = Timer(1, scan_finished_files)
+  scan_thread = Timer(0, scan_torrent)
   scan_thread.daemon = True
   scan_thread.start()
 
+  # ctrl+c로 종료
   try: 
     while 1: 
       time.sleep(.1) 

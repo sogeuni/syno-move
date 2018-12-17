@@ -1,7 +1,6 @@
-host:
-  protocol: 'https'
-  domain: 'domain.com'
-  port: 5001
-auth:
-  account: 'userid'
-  passwd: 'passw0rd!'
+server: 'https://server:5001'
+account: 'account'
+passwd: 'passw0rd!'
+scan_interval: 60
+org_root: '/volume1'
+dest_root: 'remote:/tv'
