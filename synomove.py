@@ -30,20 +30,21 @@ def move_file():
       
       try:
         proc = subprocess.Popen(
-          ['rclone', 'moveto', os.path.join(config.org_root, task.org), os.path.join(config.dest_root, task.dest)],
+          ['rclone', 'moveto', os.path.join(config.org_root, task.org).encode('utf-8'), os.path.join(config.dest_root, task.dest).encode('utf-8')],
           stdout=subprocess.PIPE
         )
         out,err=proc.communicate()
         logger.debug(out)
         logger.info('move success: ' + task.file_name)
+
+        # TODO: notification
       except (subprocess.CalledProcessError, TypeError) as e:
         logger.info('move error: ' + task.file_name)
         logger.error(e)
         move_task_queue.put(item)
-      
-      # TODO: notification
 
       move_task_queue.task_done()
+      time.sleep(1)
 
 def scan_torrent():
   logger.info('scan_torrent')
