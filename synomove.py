@@ -67,7 +67,10 @@ if __name__ == '__main__':
   logger.info('start SYNOMOVE')
 
   # TODO: config path 설정
-  stream = open('config.yaml', 'r')
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  config_path = os.path.join(script_dir, "config.yaml")
+  logger.info('load config file: ' + config_path)
+  stream = open(config_path, 'r')
   config = Config(yaml.load(stream))
 
   logger.info('Connect to ' + config.server)
