@@ -14,7 +14,7 @@ def setup_custom_logger():
   file_handler.setFormatter(formatter)
 
   logger = logging.getLogger(LOGGER_NAME)
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
   logger.addHandler(stream_handler)
   logger.addHandler(file_handler)
   return logger
