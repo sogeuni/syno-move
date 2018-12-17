@@ -25,13 +25,13 @@ def move_file():
 
     if item:
       task = Task(item)
-      cmd = 'rclone moveto "' + os.path.join(config.org_root, task.org) + '" "' + os.path.join(config.dest_root, task.dest) + '"'
+      cmd = ["rclone", "moveto", os.path.join(config.org_root, task.org), os.path.join(config.dest_root, task.dest)]
       logger.info('move start: ' + cmd)
       
       try:
-        result = subprocess.check_output(cmd, shell=True)
+        subprocess.call(cmd)
         logger.info('move success: ' + cmd)
-      except subprocess.CalledProcessError as e:
+      except (subprocess.CalledProcessError, TypeError) as e:
         logger.info('move error: ' + cmd)
         logger.error(e)
         move_task_queue.put(item)
