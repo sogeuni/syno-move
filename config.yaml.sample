@@ -1,6 +1,7 @@
-server: 'https://server:5001'
+server: 'http://server:5000'
 account: 'account'
 passwd: 'passw0rd!'
 scan_interval: 60
+command: 'rclone moveto --config /root/.config/rclone/rclone.conf'
 org_root: '/volume1'
 dest_root: 'remote:/tv'

@@ -30,11 +30,12 @@ def move_file():
       
       try:
         proc = subprocess.Popen(
-          ['rclone', 'moveto', os.path.join(config.org_root, task.org).encode('utf-8'), os.path.join(config.dest_root, task.dest).encode('utf-8'), '--config', '/root/.config/rclone/rclone.conf'],
+          [config.command, os.path.join(config.org_root, task.org).encode('utf-8'), os.path.join(config.dest_root, task.dest).encode('utf-8')],
           stdout=subprocess.PIPE
         )
         out,err=proc.communicate()
         logger.debug(out)
+        logger.debug(err)
         logger.info('move success: ' + task.file_name)
 
         # TODO: notification
