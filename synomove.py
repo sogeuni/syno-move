@@ -33,7 +33,8 @@ def move_file():
       except subprocess.CalledProcessError as e:
         logger.error(e)
         move_task_queue.put(item)
-        # TODO: notification
+      
+      # TODO: notification
 
       move_task_queue.task_done()
 

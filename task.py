@@ -16,7 +16,7 @@ class Task():
     self.download_type = dict.get('type')
     self.download_status = dict.get('status')
 
-    self.org = dict.get('additional').get('detail').get('destination')
+    self.org = os.path.join(dict.get('additional').get('detail').get('destination'), self.file_name)
 
     p = re.compile(TV_SUFFIX)
 
