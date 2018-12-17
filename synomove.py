@@ -26,13 +26,13 @@ def move_file():
     if item:
       task = Task(item)
       cmd = ["rclone", "moveto", os.path.join(config.org_root, task.org), os.path.join(config.dest_root, task.dest)]
-      logger.info('move start: ' + cmd)
+      logger.info('move start: '.join(cmd))
       
       try:
         subprocess.call(cmd)
-        logger.info('move success: ' + cmd)
+        logger.info('move success: '.join(cmd))
       except (subprocess.CalledProcessError, TypeError) as e:
-        logger.info('move error: ' + cmd)
+        logger.info('move error: '.join(cmd))
         logger.error(e)
         move_task_queue.put(item)
       
