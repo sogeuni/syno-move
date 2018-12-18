@@ -28,9 +28,7 @@ def move_file():
 
     if item:
       task = Task(config, item)
-      cmd = config.command 
-        + '"' + os.path.join(config.org_root, task.org_path).encode('utf-8') + '"'
-        + '"' + os.path.join(config.dest_root, task.dest_path).encode('utf-8') + '"'
+      cmd = config.command + '"' + os.path.join(config.org_root, task.org_path).encode('utf-8') + '" "' + os.path.join(config.dest_root, task.dest_path).encode('utf-8') + '"'
       logger.info("move start:" + cmd)
       
       if not TEST:
