@@ -16,7 +16,10 @@ from synopy.base import Connection
 from task import Task
 from util import Config
 
-move_task_queue = persistqueue.Queue('move_task_queue')
+TEST = False
+
+file_dir = os.path.dirname(os.path.abspath(__file__))
+move_task_queue = persistqueue.Queue(os.path.join(file_dir, 'move_task_queue'))
 
 def move_file():
   while True:
@@ -24,25 +27,28 @@ def move_file():
     item = move_task_queue.get()
 
     if item:
-      task = Task(item)
-      cmd = 'rclone moveto "' + os.path.join(config.org_root, task.org) + '" "' + os.path.join(config.dest_root, task.dest) + '"'
-      logger.info('move start: ' + cmd)
+      task = Task(config, item)
+      cmd = [
+        config.command,
+        os.path.join(config.org_root, task.org_path).encode('utf-8'),
+        os.path.join(config.dest_root, task.dest_path).encode('utf-8')
+      ]
+      logger.info("move start:")
+      logger.info(''.join(cmd))
       
-      try:
-        proc = subprocess.Popen(
-          [config.command, os.path.join(config.org_root, task.org).encode('utf-8'), os.path.join(config.dest_root, task.dest).encode('utf-8')],
-          stdout=subprocess.PIPE
-        )
-        out,err=proc.communicate()
-        logger.debug(out)
-        logger.debug(err)
-        logger.info('move success: ' + task.file_name)
+      if not TEST:
+        try:
+          proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+          out,err=proc.communicate()
+          logger.debug(out)
+          logger.debug(err)
+          logger.info('move success: ' + task.file_name)
 
-        # TODO: notification
-      except (subprocess.CalledProcessError, TypeError) as e:
-        logger.info('move error: ' + task.file_name)
-        logger.error(e)
-        move_task_queue.put(item)
+          # TODO: notification
+        except (subprocess.CalledProcessError, TypeError) as e:
+          logger.error('move error: ' + task.file_name)
+          logger.error(e)
+          move_task_queue.put(item)
 
       move_task_queue.task_done()
       time.sleep(1)
@@ -59,13 +65,19 @@ def scan_torrent():
     items = resp.payload.get('data').get('tasks')
 
     for item in items:
-      task = Task(item)
+      task = Task(config, item)
+      task.debug_print()
 
       if task.is_complete():
-        logger.info('delete: ' + task.id)
-        result = dstask_api.delete(id=task.id)
-        logger.debug(result.payload)
-        if result.payload.get('success'):
+        logger.info('delete torrent: ' + task.file_name)
+
+        if not TEST:
+          result = dstask_api.delete(id=task.id)
+          logger.debug(result.payload)
+          if result.payload.get('success'):
+            logger.info('put in queue: ' + task.file_name)
+            move_task_queue.put(item)
+        else:
           logger.info('put in queue: ' + task.file_name)
           move_task_queue.put(item)
         
@@ -76,8 +88,8 @@ if __name__ == '__main__':
   logger.info('start SYNOMOVE')
 
   # TODO: config path 설정
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  config_path = os.path.join(script_dir, "config.yaml")
+  
+  config_path = os.path.join(file_dir, 'config.yaml')
   logger.info('load config file: ' + config_path)
   stream = open(config_path, 'r')
   config = Config(yaml.load(stream))
