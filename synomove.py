@@ -28,27 +28,23 @@ def move_file():
 
     if item:
       task = Task(config, item)
-      cmd = [
-        config.command,
-        os.path.join(config.org_root, task.org_path).encode('utf-8'),
-        os.path.join(config.dest_root, task.dest_path).encode('utf-8')
-      ]
-      logger.info("move start:")
-      logger.info(''.join(cmd))
+      cmd = config.command 
+        + '"' + os.path.join(config.org_root, task.org_path).encode('utf-8') + '"'
+        + '"' + os.path.join(config.dest_root, task.dest_path).encode('utf-8') + '"'
+      logger.info("move start:" + cmd)
       
       if not TEST:
         try:
-          proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-          out,err=proc.communicate()
-          logger.debug(out)
-          logger.debug(err)
-          logger.info('move success: ' + task.file_name)
-
-          # TODO: notification
-        except (subprocess.CalledProcessError, TypeError) as e:
-          logger.error('move error: ' + task.file_name)
+          ret = subprocess.call(cmd, shell=True)
+        except (subprocess.CalledProcessError, TypeError, OSError) as e:
+          ret = 1000
           logger.error(e)
-          move_task_queue.put(item)
+        finally:
+          if ret == 0:
+            logger.info('move success: ' + task.file_name)
+          else:
+            logger.error('move error: ' + task.file_name)
+            move_task_queue.put(item)
 
       move_task_queue.task_done()
       time.sleep(1)
