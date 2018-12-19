@@ -2,14 +2,10 @@
 import os
 import re
 
-import requests
-from bs4 import BeautifulSoup
-
 import log
+import util
 
 TV_SUFFIX=ur'(\s\d{1,2}-\d{1,2}회\s합본)?\.E\d{1,4}(\.END)?\.\d{6}\.(720|1080)p-NEXT(.mp4)?'
-QUERY=u'https://search.daum.net/search?w=tv&q='
-program_infos = {}
 
 class Task():
   def __init__(self, config, dict):
@@ -24,13 +20,12 @@ class Task():
     self._org_path = os.path.join(dict.get('additional').get('detail').get('destination'), self.file_name)
     self.type = 'unknown'
     self.title = ''
-    self.ext_title = ''
-    self.ext_year = ''
-    self.ext_genre = ''
-
+    
     self._parse_info()
+    print(len(self.title))
     if len(self.title) > 0:
-      self._get_additional_info()
+      self.logger.info('get external info:')
+      self.ext_info = util.get_program_info(self.title)
 
   def _parse_info(self):
     p = re.compile(TV_SUFFIX)
@@ -50,30 +45,6 @@ class Task():
     except (TypeError, AttributeError) as e:
       self.logger.error(e)
 
-  def _get_additional_info(self):
-    info = program_infos.get(self.title)
-
-    if info:
-      self.logger.info('found from cache')
-      self.ext_title = info.get('title')
-      self.ext_year = info.get('year')
-      self.ext_genre = info.get('genre')
-    else:
-      self.logger.info('get info from web')
-      req = requests.get(QUERY + self.title)
-      soup = BeautifulSoup(req.text, "html.parser")
-      info = soup.find('div', class_='info_cont')
-
-      self.logger.debug(info.prettify())
-
-      # 페이지 구조에 따라 변경될 수 있음
-      self.ext_title = info.find('div', class_='tit_program').text.strip() # programe title
-      self.ext_year = info.select_one('span:nth-of-type(3)').text.strip().split('.')[0]
-      self.ext_genre = info.find('dd', class_='cont').text.strip() # genre
-
-      # programe 정보를 캐싱
-      program_infos[self.title] = { 'title': self.ext_title, 'year': self.ext_year, 'genre': self.ext_genre }
-
   def is_complete(self):
     return (self.download_type == 'bt'
       and self.type == 'tv'
@@ -85,22 +56,24 @@ class Task():
   
   @property
   def dest_path(self):
-    if len(self.ext_title) > 0:
-      program_title = self.ext_title
+    if len(self.ext_info['title']) > 0:
+      program_title = self.ext_info['title']
     else:
       program_title = self.title
     
-    return os.path.join(self.ext_genre, self.ext_year, program_title, self.file_name)
+    # TODO: path 설정가능하도록 수정
+    # TODo: 파일명 rename 기능 구현
+    return os.path.join(self.ext_info['genre'], program_title, self.file_name)
 
   def debug_print(self):
-    self.logger.debug('=============')
+    self.logger.debug('=== ' + self.file_name)
     self.logger.debug("id: " + self.id)
-    self.logger.debug("file_name: " + self.file_name)
     self.logger.debug("title: " + self.title)
     self.logger.debug("type: " + self.type)
-    self.logger.debug("ext_title: " + self.ext_title)
-    self.logger.debug('ext_year: ' + self.ext_year)
-    self.logger.debug('ext_genre: ' + self.ext_genre)
     self.logger.debug("download_type: " + self.download_type)
     self.logger.debug("download_status: " + self.download_status)
-    self.logger.debug('============')
+    if hasattr(self, 'ext_info'):
+      self.logger.debug("ext_title: " + self.ext_info['title'])
+      self.logger.debug('ext_year: ' + self.ext_info['year'])
+      self.logger.debug('ext_genre: ' + self.ext_info['genre'])
+    self.logger.debug('======')
