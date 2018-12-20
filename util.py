@@ -4,6 +4,7 @@ import yaml
 from bs4 import BeautifulSoup
 
 import log
+import re
 
 QUERY=u'https://m.search.daum.net/search?w=tv&q='
 program_infos = {}
@@ -33,24 +34,36 @@ def get_program_info(title):
     req = requests.get(QUERY + title)
     soup = BeautifulSoup(req.text, "html.parser")
 
-    print(soup.find('body'))
-    return
+    i = soup.find('div', class_='info_tv')
 
-    info = soup.find('div', class_='info_cont')
+    logger.debug(i.prettify())
+    print(i.prettify())
 
-    logger.debug(info.prettify())
+    try:
+      title = i.select_one('.txt_subject').text.strip()
+      genre = i.find('dt', string=re.compile(u'^(장르|정보)$')).find_next_sibling('dd').text.split(',')[0].split('|')[0].strip()
+      bb = i.find('dt', string="방영시간 정보").find_next_sibling('dd').select('.txt_info')
 
-    # 페이지 구조에 따라 변경될 수 있음
-    title = info.find('div', class_='tit_program').text.strip() # programe title
-    year = info.select_one('span:nth-of-type(3)').text.strip().split('.')[0]
-    genre = info.find('dd', class_='cont').text.strip() # genre
+      print(title)
+      print(genre)
+      print(bb[0].text)
+      print(bb[1].text)
+      print(bb[2].text)
+    except:
+      print('error')
 
-    # programe 정보를 캐싱
-    info = { 'title': title, 'year': year, 'genre': genre }
-    program_infos[title] = info
+    # # 페이지 구조에 따라 변경될 수 있음
+    # title = info.find('div', class_='tit_program').text.strip() # programe title
+    # year = info.select_one('span:nth-of-type(3)').text.strip().split('.')[0]
+    # genre = info.find('dd', class_='cont').text.strip() # genre
+
+    # # programe 정보를 캐싱
+    # info = { 'title': title, 'year': year, 'genre': genre }
+    # program_infos[title] = info
     
-  logger.debug(info)
+  # logger.debug(info)
   return info
 
 if __name__ == '__main__':
   get_program_info(u'나의 아저씨')
+  get_program_info(u'땐뽀걸즈')
