@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import re
+import sys
+
 import requests
 import yaml
 from bs4 import BeautifulSoup
 
 import log
-import re
 
 QUERY=u'https://m.search.daum.net/search?w=tv&q='
 program_infos = {}
@@ -34,36 +36,27 @@ def get_program_info(title):
     req = requests.get(QUERY + title)
     soup = BeautifulSoup(req.text, "html.parser")
 
-    i = soup.find('div', class_='info_tv')
-
-    logger.debug(i.prettify())
-    print(i.prettify())
-
     try:
-      title = i.select_one('.txt_subject').text.strip()
-      genre = i.find('dt', string=re.compile(u'^(장르|정보)$')).find_next_sibling('dd').text.split(',')[0].split('|')[0].strip()
+      i = soup.find('div', class_='info_tv')
+
+      logger.debug(i.prettify())
+
+      info = dict()
+      info['title'] = i.select_one('.txt_subject').text.strip()
+      info['genre'] = i.find('dt', string=re.compile(u'^(장르|정보)$')).find_next_sibling('dd').text.split(',')[0].split('|')[0].strip()
+      info['year'] = '' # TODO
       bb = i.find('dt', string="방영시간 정보").find_next_sibling('dd').select('.txt_info')
 
-      print(title)
-      print(genre)
-      print(bb[0].text)
-      print(bb[1].text)
-      print(bb[2].text)
+      logger.debug(bb[0].text.strip())
+      logger.debug(bb[1].text.strip())
+      logger.debug(bb[2].text.strip())
     except:
-      print('error')
+      logger.debug('parsing error:')
+      logger.error(sys.exc_info())
 
-    # # 페이지 구조에 따라 변경될 수 있음
-    # title = info.find('div', class_='tit_program').text.strip() # programe title
-    # year = info.select_one('span:nth-of-type(3)').text.strip().split('.')[0]
-    # genre = info.find('dd', class_='cont').text.strip() # genre
-
-    # # programe 정보를 캐싱
-    # info = { 'title': title, 'year': year, 'genre': genre }
-    # program_infos[title] = info
-    
-  # logger.debug(info)
   return info
 
 if __name__ == '__main__':
-  get_program_info(u'나의 아저씨')
-  get_program_info(u'땐뽀걸즈')
+  logger = log.setup_custom_logger()
+  info = get_program_info(sys.argv[1].decode('utf-8'))
+  logger.debug(info)
