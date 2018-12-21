@@ -16,7 +16,7 @@ from synopy.base import Connection
 from task import Task
 from util import Config
 
-TEST = True
+TEST = False
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 move_task_queue = persistqueue.Queue(os.path.join(file_dir, 'move_task_queue'))
