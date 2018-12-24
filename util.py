@@ -43,7 +43,7 @@ def get_program_info(title):
     try:
       info_tv = soup.find('div', class_='info_tv')
 
-      logger.debug(info_tv.prettify())
+      # logger.debug(info_tv.prettify())
 
       title = info_tv.select_one('.txt_subject').text.strip()
       i = info_tv.find('dt', string=re.compile(u'^정보$'))
