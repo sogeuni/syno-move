@@ -17,7 +17,7 @@ from synopy.base import Connection
 from task import Task
 from util import Config
 
-TEST = False
+TEST = True
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 move_task_queue = persistqueue.Queue(os.path.join(file_dir, 'move_task_queue'))
@@ -29,7 +29,9 @@ def move_file():
 
     if item:
       task = Task(config, item)
-      cmd = config.command + ' "' + os.path.join(config.org_root, task.org_path).encode('utf-8') + '" "' + os.path.join(config.dest_root, task.dest_path).encode('utf-8') + '"'
+      org_path = os.path.join(config.org_root, task.org_path).encode('utf-8')
+      dest_path = os.path.join(config.dest_root, task.dest_path).encode('utf-8')
+      cmd = config.command + ' "' + org_path + '" "' + dest_path + '"'
       logger.info("move start:" + cmd)
       
       if not TEST:
@@ -41,12 +43,12 @@ def move_file():
         finally:
           if ret == 0:
             logger.info('move success: ' + task.file_name)
-            util.send_message(config.telegram_id, "다운로드 완료: " + task.file_name)
+            util.send_message(config.telegram_id, u"다운로드 완료:\n" + dest_path.decode('utf-8'))
           else:
             logger.error('move error: ' + task.file_name)
             move_task_queue.put(item)
       else:
-        util.send_message(config.telegram_id, "다운로드 완료: " + task.file_name)
+        util.send_message(config.telegram_id, u"다운로드 완료:\n" + dest_path.decode('utf-8'))
 
       move_task_queue.task_done()
       time.sleep(1)
