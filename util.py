@@ -41,15 +41,16 @@ def get_program_info(title):
 
       logger.debug(i.prettify())
 
-      info = dict()
-      info['title'] = i.select_one('.txt_subject').text.strip()
-      info['genre'] = i.find('dt', string=re.compile(u'^(장르|정보)$')).find_next_sibling('dd').text.split(',')[0].split('|')[0].strip()
-      info['year'] = '' # TODO
+      title = i.select_one('.txt_subject').text.strip()
+      genre = i.find('dt', string=re.compile(u'^(장르|정보)$')).find_next_sibling('dd').text.split(',')[0].split('|')[0].strip()
+      year = '' # TODO
       bb = i.find('dt', string="방영시간 정보").find_next_sibling('dd').select('.txt_info')
 
       logger.debug(bb[0].text.strip())
       logger.debug(bb[1].text.strip())
       logger.debug(bb[2].text.strip())
+
+      info = {'title': title, 'genre': genre, 'year': year}
     except:
       logger.debug('parsing error:')
       logger.error(sys.exc_info())
