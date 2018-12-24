@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import sys
 
 import log
 import util
@@ -56,14 +57,18 @@ class Task():
   
   @property
   def dest_path(self):
-    if len(self.ext_info['title']) > 0:
-      program_title = self.ext_info['title']
-    else:
-      program_title = self.title
+    try:
+      if len(self.ext_info['title']) > 0:
+        program_title = self.ext_info['title']
+      else:
+        program_title = self.title
     
-    # TODO: path 설정가능하도록 수정
-    # TODo: 파일명 rename 기능 구현
-    return os.path.join(self.ext_info['genre'], program_title, self.file_name)
+      # TODO: path 설정가능하도록 수정
+      # TODo: 파일명 rename 기능 구현
+      return os.path.join(self.ext_info['genre'], program_title, self.file_name)
+    except:
+      self.logger.error(sys.exc_info())
+      return os.path.join(self.title, self.file_name)
 
   def debug_print(self):
     self.logger.debug('=== ' + self.file_name)
