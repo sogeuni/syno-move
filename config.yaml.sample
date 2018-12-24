@@ -5,3 +5,4 @@ scan_interval: 60
 command: 'rclone moveto --config /root/.config/rclone/rclone.conf'
 org_root: '/volume1'
 dest_root: 'remote:/tv'
+telegram_id: 123456789

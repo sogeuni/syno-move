@@ -11,6 +11,7 @@ import persistqueue
 import yaml
 
 import log
+import util
 from synopy.api import DownloadStationTask
 from synopy.base import Connection
 from task import Task
@@ -40,9 +41,12 @@ def move_file():
         finally:
           if ret == 0:
             logger.info('move success: ' + task.file_name)
+            util.send_message(config.telegram_id, "다운로드 완료: " + task.file_name)
           else:
             logger.error('move error: ' + task.file_name)
             move_task_queue.put(item)
+      else:
+        util.send_message(config.telegram_id, "다운로드 완료: " + task.file_name)
 
       move_task_queue.task_done()
       time.sleep(1)
@@ -88,6 +92,8 @@ if __name__ == '__main__':
   stream = open(config_path, 'r')
   config = Config(yaml.load(stream))
 
+  util.send_message(config.telegram_id, "다운로드 서비스가 시작되었습니다.")
+
   logger.info('Connect to ' + config.server)
   url = urlparse(config.server)
 
@@ -109,4 +115,5 @@ if __name__ == '__main__':
       time.sleep(.1) 
   except KeyboardInterrupt: 
     logger.info("exit SYNOMOVE")
+    util.send_message(config.telegram_id, "다운로드 서비스가 종료되었습니다.")
     sys.exit(0)

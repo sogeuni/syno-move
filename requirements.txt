@@ -1,5 +1,6 @@
 persist-queue==0.4.1
 requests==2.21.0
-pyyaml==3.13
+PyYAML==3.13
 beautifulsoup4==4.6.3
+python_telegram_bot==11.1.0
 -e git://github.com/gspanos/synopy.git@64c47ec123f1e0b75788c234830f33f6b5c0b090#egg=synopy
