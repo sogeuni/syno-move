@@ -72,7 +72,7 @@ class Task():
     self.logger.debug("type: " + self.type)
     self.logger.debug("download_type: " + self.download_type)
     self.logger.debug("download_status: " + self.download_status)
-    if self.ext_info is not None:
+    if hasattr(self, 'ext_info') and self.ext_info is not None:
       self.logger.debug("ext_title: " + self.ext_info['title'])
       self.logger.debug('ext_year: ' + self.ext_info['year'])
       self.logger.debug('ext_genre: ' + self.ext_info['genre'])
