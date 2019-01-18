@@ -71,7 +71,11 @@ def get_program_info(title):
   return info
 
 def send_message(id, msg):
-  t_bot.sendMessage(chat_id=id, text=msg)
+  try:
+    t_bot.sendMessage(chat_id=id, text=msg)
+  except:
+    logger = log.get_logger()
+    logger.error(sys.exc_info())
 
 if __name__ == '__main__':
   logger = log.setup_custom_logger()

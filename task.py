@@ -6,7 +6,7 @@ import sys
 import log
 import util
 
-TV_SUFFIX=ur'(\s\d{1,2}-\d{1,2}회\s합본)?\.E\d{1,4}(\.END)?\.\d{6}\.(720|1080)p-NEXT(.mp4)?'
+TV_SUFFIX=ur'(?:\s(?P<e1>\d{1,4})-(?P<e2>\d{1,4})회\s합본)?\.E\d{1,4}(?P<suf>(?:\.END)?\.\d{6}\.(?:720|1080)p-NEXT(?:.mp4)?)'
 
 class Task():
   def __init__(self, config, dict):
@@ -38,6 +38,10 @@ class Task():
       if m:
         self.type = 'tv'
         self.title = p.sub('', self.file_name)
+
+        if m.group('e1') and m.group('e2'):
+          self.rename_file_name = self.title + '.E' + m.group('e1') + 'E' + m.group('e2') + m.group('suf')
+          self.logger.info('rename: ' + self.file_name + ' -> ' + self.rename_file_name)
       else:
         # suffix가 일치하지 않는 경우 movie로 판단
         # TODO: movie 처리
@@ -64,8 +68,12 @@ class Task():
         program_title = self.title
     
       # TODO: path 설정가능하도록 수정
-      # TODo: 파일명 rename 기능 구현
-      return os.path.join(self.ext_info['genre'], program_title, self.file_name)
+      if self.rename_file_name:
+        file_name = self.rename_file_name
+      else:
+        file_name = self.file_name
+
+      return os.path.join(self.ext_info['genre'], program_title, file_name)
     except:
       self.logger.error(sys.exc_info())
       return os.path.join(self.title, self.file_name)
