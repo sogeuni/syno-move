@@ -77,6 +77,9 @@ def send_message(id, msg):
     logger = log.get_logger()
     logger.error(sys.exc_info())
 
+def has_number(input):
+  return bool(re.search(r'\d', input))
+
 if __name__ == '__main__':
   logger = log.setup_custom_logger()
   info = get_program_info(sys.argv[1].decode('utf-8'))

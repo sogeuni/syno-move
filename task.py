@@ -6,7 +6,7 @@ import sys
 import log
 import util
 
-TV_SUFFIX=ur'(?:\s(?P<e1>\d{1,4})-(?P<e2>\d{1,4})회\s합본)?\.E\d{1,4}(?P<suf>(?:\.END)?\.\d{6}\.(?:720|1080)p-NEXT(?:.mp4)?)'
+TV_SUFFIX=ur'(?:\s(?P<e1>\d{1,4})-(?P<e2>\d{1,4})회\s합본)?\.E(?P<ep>\d{1,4})(?P<suf>(?:\.END)?\.\d{6}\.(?:720|1080)p-NEXT(?:.mp4)?)'
 
 class Task():
   def __init__(self, config, dict):
@@ -14,14 +14,14 @@ class Task():
 
     self.id = dict.get('id')
     self.file_name = dict.get('title')
-    
+
     self.download_type = dict.get('type')
     self.download_status = dict.get('status')
 
     self._org_path = os.path.join(dict.get('additional').get('detail').get('destination'), self.file_name)
     self.type = 'unknown'
     self.title = ''
-    
+
     self._parse_info()
     print(len(self.title))
     if len(self.title) > 0:
@@ -38,11 +38,20 @@ class Task():
       if m:
         self.type = 'tv'
         self.title = p.sub('', self.file_name)
+        rename_list = []
 
         # 파일명에 '##-##회 합본'이 있을 경우 PLEX에서 지원하는 형태(E##E##)로 이름 변경
         if m.group('e1') and m.group('e2'):
-          self.rename_file_name = self.title + '.E' + m.group('e1').zfill(2) + 'E' + m.group('e2').zfill(2) + m.group('suf')
-          self.logger.info('rename: ' + self.file_name + ' -> ' + self.rename_file_name)
+          rename_list = [self.title, '.E', m.group('e1').zfill(2), 'E', m.group('e2').zfill(2), m.group('suf')]
+        else:
+          rename_list = [self.title, '.E', m.group('ep'), m.group('suf')]
+
+        # 제목에 숫자가 들어간경우 PLEX에서 파싱이 제대로 되지 않을 수 있으므로 시즌정보('S01') 추가
+        if util.has_number(self.title):
+          rename_list[1] = '.S01E'
+
+        self.rename_file_name = ''.join(rename_list)
+        self.logger.info('rename: ' + self.file_name + ' -> ' + self.rename_file_name)
       else:
         # suffix가 일치하지 않는 경우 movie로 판단
         # TODO: movie 처리
@@ -59,7 +68,7 @@ class Task():
   @property
   def org_path(self):
     return self._org_path
-  
+
   @property
   def dest_path(self):
     try:
@@ -67,7 +76,7 @@ class Task():
         program_title = self.ext_info['title']
       else:
         program_title = self.title
-    
+
       # TODO: path 설정가능하도록 수정
       if self.rename_file_name:
         file_name = self.rename_file_name
