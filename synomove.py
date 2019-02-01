@@ -20,102 +20,110 @@ from util import Config
 TEST = False
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
-move_task_queue = persistqueue.Queue(os.path.join(file_dir, 'move_task_queue'))
+move_task_queue = persistqueue.Queue(os.path.join(file_dir, "move_task_queue"))
+
 
 def move_file():
-  while True:
-    logger.info('wait move_file')
-    item = move_task_queue.get()
+    while True:
+        logger.info("wait move_file")
+        item = move_task_queue.get()
 
-    if item:
-      task = Task(config, item)
-      org_path = os.path.join(config.org_root, task.org_path).encode('utf-8')
-      dest_path = os.path.join(config.dest_root, task.dest_path).encode('utf-8')
-      cmd = config.command + ' "' + org_path + '" "' + dest_path + '"'
-      logger.info("move start:" + cmd)
-      
-      if not TEST:
-        try:
-          ret = subprocess.call(cmd, shell=True)
-        except (subprocess.CalledProcessError, TypeError, OSError) as e:
-          ret = 1000
-          logger.error(e)
-        finally:
-          if ret == 0:
-            logger.info('move success: ' + task.file_name)
-            util.send_message(config.telegram_id, u"다운로드 완료:\n" + dest_path.decode('utf-8'))
-          else:
-            logger.error('move error: ' + task.file_name)
-            move_task_queue.put(item)
-      else:
-        util.send_message(config.telegram_id, u"다운로드 완료:\n" + dest_path.decode('utf-8'))
+        if item:
+            task = Task(config, item)
+            org_path = os.path.join(config.org_root, task.org_path).encode("utf-8")
+            dest_path = os.path.join(config.dest_root, task.dest_path).encode("utf-8")
+            cmd = config.command + ' "' + org_path + '" "' + dest_path + '"'
+            logger.info("move start:" + cmd)
 
-      move_task_queue.task_done()
-      time.sleep(1)
+            if not TEST:
+                try:
+                    ret = subprocess.call(cmd, shell=True)
+                except (subprocess.CalledProcessError, TypeError, OSError) as e:
+                    ret = 1000
+                    logger.error(e)
+                finally:
+                    if ret == 0:
+                        logger.info("move success: " + task.file_name)
+                        util.send_message(
+                            config.telegram_id,
+                            u"다운로드 완료:\n" + dest_path.decode("utf-8"),
+                        )
+                    else:
+                        logger.error("move error: " + task.file_name)
+                        move_task_queue.put(item)
+            else:
+                util.send_message(
+                    config.telegram_id, u"다운로드 완료:\n" + dest_path.decode("utf-8")
+                )
+
+            move_task_queue.task_done()
+            time.sleep(1)
+
 
 def scan_torrent():
-  logger.info('scan_torrent')
-  dstask_api = DownloadStationTask(conn, version=1)
-  # Use the 'list' query method to see the running tasks
-  resp = dstask_api.list(additional='detail,file')
+    logger.info("scan_torrent")
+    dstask_api = DownloadStationTask(conn, version=1)
+    # Use the 'list' query method to see the running tasks
+    resp = dstask_api.list(additional="detail,file")
 
-  logger.debug(resp.payload)
+    logger.debug(resp.payload)
 
-  if resp.is_success():
-    items = resp.payload.get('data').get('tasks')
+    if resp.is_success():
+        items = resp.payload.get("data").get("tasks")
 
-    for item in items:
-      task = Task(config, item)
-      task.debug_print()
+        for item in items:
+            task = Task(config, item)
+            task.debug_print()
 
-      if task.is_complete():
-        logger.info('delete torrent: ' + task.file_name)
+            if task.is_complete():
+                logger.info("delete torrent: " + task.file_name)
 
-        if not TEST:
-          result = dstask_api.delete(id=task.id)
-          logger.debug(result.payload)
-          if result.payload.get('success'):
-            logger.info('put in queue: ' + task.file_name)
-            move_task_queue.put(item)
-        else:
-          logger.info('put in queue: ' + task.file_name)
-          move_task_queue.put(item)
-        
-  Timer(config.scan_interval, scan_torrent).start()
+                if not TEST:
+                    result = dstask_api.delete(id=task.id)
+                    logger.debug(result.payload)
+                    if result.payload.get("success"):
+                        logger.info("put in queue: " + task.file_name)
+                        move_task_queue.put(item)
+                else:
+                    logger.info("put in queue: " + task.file_name)
+                    move_task_queue.put(item)
 
-if __name__ == '__main__':
-  logger = log.setup_custom_logger()
-  logger.info('start SYNOMOVE')
+    Timer(config.scan_interval, scan_torrent).start()
 
-  # TODO: config path 설정
-  
-  config_path = os.path.join(file_dir, 'config.yaml')
-  logger.info('load config file: ' + config_path)
-  stream = open(config_path, 'r')
-  config = Config(yaml.load(stream))
 
-  util.send_message(config.telegram_id, "다운로드 서비스가 시작되었습니다.")
+if __name__ == "__main__":
+    logger = log.setup_custom_logger()
+    logger.info("start SYNOMOVE")
 
-  logger.info('Connect to ' + config.server)
-  url = urlparse(config.server)
+    # TODO: config path 설정
 
-  # connect to DSM
-  conn = Connection(url.scheme, url.hostname, port=url.port)
-  conn.authenticate(config.account, config.passwd)
+    config_path = os.path.join(file_dir, "config.yaml")
+    logger.info("load config file: " + config_path)
+    stream = open(config_path, "r")
+    config = Config(yaml.load(stream))
 
-  move_thread = Thread(target=move_file)
-  move_thread.daemon = True
-  move_thread.start()
+    util.send_message(config.telegram_id, "다운로드 서비스가 시작되었습니다.")
 
-  scan_thread = Timer(0, scan_torrent)
-  scan_thread.daemon = True
-  scan_thread.start()
+    logger.info("Connect to " + config.server)
+    url = urlparse(config.server)
 
-  # ctrl+c로 종료
-  try: 
-    while 1: 
-      time.sleep(.1) 
-  except KeyboardInterrupt: 
-    logger.info("exit SYNOMOVE")
-    util.send_message(config.telegram_id, "다운로드 서비스가 종료되었습니다.")
-    sys.exit(0)
+    # connect to DSM
+    conn = Connection(url.scheme, url.hostname, port=url.port)
+    conn.authenticate(config.account, config.passwd)
+    move_thread = Thread(target=move_file)
+    move_thread.daemon = True
+    move_thread.start()
+
+    scan_thread = Timer(0, scan_torrent)
+    scan_thread.daemon = True
+    scan_thread.start()
+
+    # ctrl+c로 종료
+    try:
+        while 1:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        logger.info("exit SYNOMOVE")
+        util.send_message(config.telegram_id, "다운로드 서비스가 종료되었습니다.")
+        sys.exit(0)
+
